@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -23,7 +24,10 @@ export default function RootLayout({
       lang="en"
       className={`${poppins.variable} font-sans h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-[#09090b] text-zinc-50">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#09090b] text-zinc-50">
+        {children}
+        <Toaster theme="dark" position="bottom-right" />
+      </body>
     </html>
   );
 }

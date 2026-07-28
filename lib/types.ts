@@ -12,6 +12,7 @@ export interface Project {
   github_repo_url?: string | null;
   client_wa_number: string;
   target_deadline?: string | null;
+  domain_expiry_date?: string | null;
   created_at: string;
   updated_at: string;
 }

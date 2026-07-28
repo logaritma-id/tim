@@ -27,6 +27,7 @@ export function ProjectFormModal({ onSuccess, project }: ProjectFormModalProps) 
     github_repo_url: project?.github_repo_url || '',
     staging_url: project?.staging_url || '',
     production_url: project?.production_url || '',
+    domain_expiry_date: project?.domain_expiry_date || '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,6 +41,7 @@ export function ProjectFormModal({ onSuccess, project }: ProjectFormModalProps) 
     const payload = {
       ...formData,
       target_deadline: formData.target_deadline || null,
+      domain_expiry_date: formData.domain_expiry_date || null,
     };
 
     try {
@@ -111,9 +113,13 @@ export function ProjectFormModal({ onSuccess, project }: ProjectFormModalProps) 
                 <Label htmlFor="staging_url" className="text-zinc-400 text-xs uppercase tracking-wider">Staging URL</Label>
                 <Input id="staging_url" name="staging_url" value={formData.staging_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://staging..." />
               </div>
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="production_url" className="text-zinc-400 text-xs uppercase tracking-wider">Production URL</Label>
                 <Input id="production_url" name="production_url" value={formData.production_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://..." />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="domain_expiry_date" className="text-zinc-400 text-xs uppercase tracking-wider">Domain Expiry</Label>
+                <Input id="domain_expiry_date" type="date" name="domain_expiry_date" value={formData.domain_expiry_date || ''} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert opacity-80" />
               </div>
             </div>
             <div className="flex justify-end mt-2 pt-4 border-t border-zinc-800/60 gap-3">
