@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +37,6 @@ export function ProjectFormModal({ onSuccess, project }: ProjectFormModalProps) 
     e.preventDefault();
     setLoading(true);
 
-    // Format target_deadline for Postgres (empty string -> null)
     const payload = {
       ...formData,
       target_deadline: formData.target_deadline || null,
@@ -69,59 +68,62 @@ export function ProjectFormModal({ onSuccess, project }: ProjectFormModalProps) 
   return (
     <>
       {project ? (
-        <Button variant="outline" size="sm" className="bg-zinc-900 border-zinc-700 hover:bg-zinc-800" onClick={() => setOpen(true)}>Edit</Button>
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800" onClick={() => setOpen(true)}>
+          Edit
+        </Button>
       ) : (
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-900/20" onClick={() => setOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Tambah Project
+        <Button className="bg-zinc-100 hover:bg-white text-zinc-900 font-medium h-9 px-4 shadow-sm" onClick={() => setOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" /> Project Baru
         </Button>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[600px] bg-zinc-950 border-zinc-800 text-zinc-100">
-        <DialogHeader>
-          <DialogTitle>{project ? 'Edit Project' : 'Project Baru'}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="project_title">Nama Project *</Label>
-              <Input id="project_title" name="project_title" value={formData.project_title} onChange={handleChange} required className="bg-zinc-900 border-zinc-800 focus-visible:ring-indigo-500" placeholder="E.g. E-Commerce Website" />
+        <DialogContent className="sm:max-w-[600px] bg-zinc-950 border-zinc-800 text-zinc-100 shadow-xl rounded-xl">
+          <DialogHeader className="border-b border-zinc-800/60 pb-4">
+            <DialogTitle className="font-semibold text-lg">{project ? 'Edit Project' : 'Buat Project Baru'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="grid gap-5 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="project_title" className="text-zinc-400 text-xs uppercase tracking-wider">Nama Project <span className="text-red-500">*</span></Label>
+                <Input id="project_title" name="project_title" value={formData.project_title} onChange={handleChange} required className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="E.g. E-Commerce Website" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="client_name" className="text-zinc-400 text-xs uppercase tracking-wider">Nama Klien <span className="text-red-500">*</span></Label>
+                <Input id="client_name" name="client_name" value={formData.client_name} onChange={handleChange} required className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="E.g. PT Maju Bersama" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="client_wa_number" className="text-zinc-400 text-xs uppercase tracking-wider">No WA Klien <span className="text-red-500">*</span></Label>
+                <Input id="client_wa_number" name="client_wa_number" value={formData.client_wa_number} onChange={handleChange} required className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="081234567890" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="target_deadline" className="text-zinc-400 text-xs uppercase tracking-wider">Target Deadline</Label>
+                <Input id="target_deadline" type="date" name="target_deadline" value={formData.target_deadline || ''} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert opacity-80" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="figma_url" className="text-zinc-400 text-xs uppercase tracking-wider">Link Figma</Label>
+                <Input id="figma_url" name="figma_url" value={formData.figma_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://figma.com/..." />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="github_repo_url" className="text-zinc-400 text-xs uppercase tracking-wider">Link GitHub</Label>
+                <Input id="github_repo_url" name="github_repo_url" value={formData.github_repo_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://github.com/..." />
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="staging_url" className="text-zinc-400 text-xs uppercase tracking-wider">Staging URL</Label>
+                <Input id="staging_url" name="staging_url" value={formData.staging_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://staging..." />
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="production_url" className="text-zinc-400 text-xs uppercase tracking-wider">Production URL</Label>
+                <Input id="production_url" name="production_url" value={formData.production_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://..." />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="client_name">Nama Klien *</Label>
-              <Input id="client_name" name="client_name" value={formData.client_name} onChange={handleChange} required className="bg-zinc-900 border-zinc-800 focus-visible:ring-indigo-500" placeholder="E.g. PT Maju Bersama" />
+            <div className="flex justify-end mt-2 pt-4 border-t border-zinc-800/60 gap-3">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 hover:text-zinc-100 h-9">Batal</Button>
+              <Button type="submit" disabled={loading} className="bg-zinc-100 hover:bg-white text-zinc-900 font-medium h-9 px-6">
+                {loading ? 'Menyimpan...' : 'Simpan'}
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="client_wa_number">No WA Klien *</Label>
-              <Input id="client_wa_number" name="client_wa_number" value={formData.client_wa_number} onChange={handleChange} required className="bg-zinc-900 border-zinc-800 focus-visible:ring-indigo-500" placeholder="081234567890" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="target_deadline">Target Deadline</Label>
-              <Input id="target_deadline" type="date" name="target_deadline" value={formData.target_deadline || ''} onChange={handleChange} className="bg-zinc-900 border-zinc-800 focus-visible:ring-indigo-500 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="figma_url">Link Figma</Label>
-              <Input id="figma_url" name="figma_url" value={formData.figma_url} onChange={handleChange} className="bg-zinc-900 border-zinc-800 focus-visible:ring-indigo-500" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="github_repo_url">Link GitHub</Label>
-              <Input id="github_repo_url" name="github_repo_url" value={formData.github_repo_url} onChange={handleChange} className="bg-zinc-900 border-zinc-800 focus-visible:ring-indigo-500" />
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="staging_url">Staging URL</Label>
-              <Input id="staging_url" name="staging_url" value={formData.staging_url} onChange={handleChange} className="bg-zinc-900 border-zinc-800 focus-visible:ring-indigo-500" />
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="production_url">Production URL</Label>
-              <Input id="production_url" name="production_url" value={formData.production_url} onChange={handleChange} className="bg-zinc-900 border-zinc-800 focus-visible:ring-indigo-500" />
-            </div>
-          </div>
-          <div className="flex justify-end mt-4">
-            <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              {loading ? 'Menyimpan...' : 'Simpan'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
+          </form>
+        </DialogContent>
       </Dialog>
     </>
   );

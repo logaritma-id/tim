@@ -1,21 +1,21 @@
 import { ProjectBoard } from '@/components/ProjectBoard';
-import { Layers } from 'lucide-react';
+import { BriefcaseBusiness } from 'lucide-react';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8 lg:p-12 selection:bg-indigo-500/30">
+    <main className="min-h-screen bg-[#09090b] text-zinc-100 px-4 py-8 md:p-10 lg:p-12">
       <div className="max-w-7xl mx-auto space-y-8">
-        <header className="flex flex-col gap-3 pb-8 pt-4">
-          <div className="inline-flex items-center space-x-3 mb-2">
-            <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
-              <Layers className="w-8 h-8 text-indigo-400" />
+        <header className="flex flex-col gap-2 pb-6 border-b border-zinc-800/60">
+          <div className="flex items-center space-x-3 mb-1">
+            <div className="p-2 bg-zinc-800/40 rounded-lg border border-zinc-700/50 text-zinc-300">
+              <BriefcaseBusiness className="w-5 h-5" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-br from-white via-zinc-200 to-zinc-500 bg-clip-text text-transparent">
-              Project Hub
+            <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
+              Logaritma Project Hub
             </h1>
           </div>
-          <p className="text-zinc-400 text-lg max-w-2xl leading-relaxed">
-            Centralized monitoring platform untuk alur kerja web development Logaritma. Pantau status, kelola deadline, dan sinkronisasi update otomatis ke klien.
+          <p className="text-zinc-400 text-sm md:text-base max-w-3xl leading-relaxed">
+            Sistem pemantauan terpusat untuk alur kerja pengembangan web. Kelola status, deadline, dan pastikan setiap project terpantau dengan profesional.
           </p>
         </header>
         
