@@ -95,9 +95,7 @@ export function ProjectDetailDrawer({ project, children }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <div className="cursor-pointer">{children}</div>
-      </SheetTrigger>
+      <SheetTrigger render={<div className="cursor-pointer">{children}</div>} />
       <SheetContent className="w-full sm:max-w-md bg-[#09090b] border-zinc-800 text-zinc-100 p-0 flex flex-col h-full">
         <SheetHeader className="p-6 pb-4 border-b border-zinc-800/60">
           <SheetTitle className="text-xl text-zinc-50">{project.project_title}</SheetTitle>
