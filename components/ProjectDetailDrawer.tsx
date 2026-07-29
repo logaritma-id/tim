@@ -157,7 +157,13 @@ export function ProjectDetailDrawer({ project, children }: Props) {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={<div className="cursor-pointer">{children}</div>} />
       
-      <SheetContent className={`bg-[#09090b] border-zinc-800 text-zinc-100 p-0 flex flex-col transition-all duration-300 ease-in-out ${isFullscreen ? 'w-full sm:max-w-none' : 'w-full sm:max-w-md'}`}>
+      <SheetContent
+        style={{
+          width: isFullscreen ? '100vw' : undefined,
+          maxWidth: isFullscreen ? '100vw' : undefined,
+        }}
+        className="bg-[#09090b] border-zinc-800 text-zinc-100 p-0 flex flex-col transition-all duration-300 ease-in-out"
+      >
         
         {/* Fullscreen Toggle Button - positioned near the Close button */}
         <div className="absolute right-12 top-3 z-50">
