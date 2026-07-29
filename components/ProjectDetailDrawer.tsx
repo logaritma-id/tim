@@ -168,15 +168,36 @@ export function ProjectDetailDrawer({ project, children }: Props) {
   const addComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || !user) return;
+    
+    const messageText = newComment;
+    setNewComment('');
+
+    // Optimistic Update (Tampilkan langsung di UI sebelum server merespon)
+    const optimisticComment: ProjectComment = {
+      id: crypto.randomUUID(), // ID sementara
+      project_id: project.id,
+      user_id: user.id,
+      user_name: userName,
+      user_avatar: userAvatar,
+      message: messageText,
+      created_at: new Date().toISOString()
+    };
+    
+    setComments(prev => [...prev, optimisticComment]);
+
     const { error } = await supabase.from('project_comments').insert([{
       project_id: project.id,
       user_id: user.id,
       user_name: userName,
       user_avatar: userAvatar,
-      message: newComment
+      message: messageText
     }]);
-    if (error) toast.error('Gagal mengirim pesan');
-    else setNewComment('');
+    
+    if (error) {
+      toast.error('Gagal mengirim pesan');
+      // Rollback jika gagal
+      setComments(prev => prev.filter(c => c.id !== optimisticComment.id));
+    }
   };
 
   return (
@@ -325,7 +346,7 @@ export function ProjectDetailDrawer({ project, children }: Props) {
               </TabsContent>
 
               {/* CHAT/DISCUSSION */}
-              <TabsContent value="chat" className="h-full p-0 m-0 flex flex-col">
+              <TabsContent value="chat" className="h-full p-0 m-0 flex flex-col min-h-0 data-[state=inactive]:hidden">
                 <ScrollArea className="flex-1 px-6 py-4">
                   <div className="space-y-4 pb-4">
                     {comments.length === 0 ? (
