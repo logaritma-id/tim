@@ -6,10 +6,10 @@ export interface Project {
   client_name: string;
   project_title: string;
   status: ProjectStatus;
-  staging_url?: string | null;
   production_url?: string | null;
-  figma_url?: string | null;
-  github_repo_url?: string | null;
+  admin_url?: string | null;
+  member_url?: string | null;
+  tutorial_url?: string | null;
   client_wa_number: string;
   target_deadline?: string | null;
   domain_expiry_date?: string | null;

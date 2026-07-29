@@ -56,6 +56,13 @@ export function ProjectBoard() {
   };
 
   useEffect(() => {
+    // Fallback keamanan jika Supabase hang (setelah 5 detik matikan loading)
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+      }
+    }, 5000);
+
     fetchProjects();
 
     const channel = supabase
@@ -70,6 +77,7 @@ export function ProjectBoard() {
       .subscribe();
 
     return () => {
+      clearTimeout(timeoutId);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -248,19 +256,24 @@ export function ProjectBoard() {
                 </div>
                 
                 <div className="flex flex-wrap gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                  {project.figma_url && (
-                    <button type="button" onClick={(e) => copyToClipboard(e, project.figma_url!, 'Figma')} className="inline-flex items-center text-xs bg-zinc-800/50 text-zinc-300 hover:text-zinc-50 hover:bg-zinc-700 px-2.5 py-1.5 rounded-md transition-colors border border-zinc-700/50 group/btn">
-                      <Palette className="mr-1.5 h-3.5 w-3.5" /> Figma <Copy className="ml-1.5 h-3 w-3 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                  {project.production_url && (
+                    <button type="button" onClick={(e) => copyToClipboard(e, project.production_url!, 'Link Utama')} className="inline-flex items-center text-xs bg-zinc-800/50 text-zinc-300 hover:text-zinc-50 hover:bg-zinc-700 px-2.5 py-1.5 rounded-md transition-colors border border-zinc-700/50 group/btn">
+                      <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Web Utama <Copy className="ml-1.5 h-3 w-3 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
                     </button>
                   )}
-                  {project.github_repo_url && (
-                    <a href={project.github_repo_url} target="_blank" rel="noreferrer" className="inline-flex items-center text-xs bg-zinc-800/50 text-zinc-300 hover:text-zinc-50 hover:bg-zinc-700 px-2.5 py-1.5 rounded-md transition-colors border border-zinc-700/50">
-                      <GitBranch className="mr-1.5 h-3.5 w-3.5" /> Repo <ExternalLink className="ml-1.5 h-3 w-3 opacity-50" />
-                    </a>
+                  {project.admin_url && (
+                    <button type="button" onClick={(e) => copyToClipboard(e, project.admin_url!, 'Link Admin')} className="inline-flex items-center text-xs bg-zinc-800/50 text-zinc-300 hover:text-zinc-50 hover:bg-zinc-700 px-2.5 py-1.5 rounded-md transition-colors border border-zinc-700/50 group/btn">
+                      <LinkIcon className="mr-1.5 h-3.5 w-3.5" /> Admin <Copy className="ml-1.5 h-3 w-3 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                    </button>
                   )}
-                  {project.staging_url && (
-                    <button type="button" onClick={(e) => copyToClipboard(e, project.staging_url!, 'Staging URL')} className="inline-flex items-center text-xs bg-zinc-800/50 text-zinc-300 hover:text-zinc-50 hover:bg-zinc-700 px-2.5 py-1.5 rounded-md transition-colors border border-zinc-700/50 group/btn">
-                      <LinkIcon className="mr-1.5 h-3.5 w-3.5" /> Staging <Copy className="ml-1.5 h-3 w-3 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                  {project.member_url && (
+                    <button type="button" onClick={(e) => copyToClipboard(e, project.member_url!, 'Link Member Area')} className="inline-flex items-center text-xs bg-zinc-800/50 text-zinc-300 hover:text-zinc-50 hover:bg-zinc-700 px-2.5 py-1.5 rounded-md transition-colors border border-zinc-700/50 group/btn">
+                      <LinkIcon className="mr-1.5 h-3.5 w-3.5" /> Member <Copy className="ml-1.5 h-3 w-3 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                    </button>
+                  )}
+                  {project.tutorial_url && (
+                    <button type="button" onClick={(e) => copyToClipboard(e, project.tutorial_url!, 'Link Tutorial')} className="inline-flex items-center text-xs bg-zinc-800/50 text-zinc-300 hover:text-zinc-50 hover:bg-zinc-700 px-2.5 py-1.5 rounded-md transition-colors border border-zinc-700/50 group/btn">
+                      <LinkIcon className="mr-1.5 h-3.5 w-3.5" /> Tutorial <Copy className="ml-1.5 h-3 w-3 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
                     </button>
                   )}
                 </div>

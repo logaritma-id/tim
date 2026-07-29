@@ -23,10 +23,10 @@ export function ProjectFormModal({ onSuccess, project }: ProjectFormModalProps) 
     project_title: project?.project_title || '',
     client_wa_number: project?.client_wa_number || '',
     target_deadline: project?.target_deadline || '',
-    figma_url: project?.figma_url || '',
-    github_repo_url: project?.github_repo_url || '',
-    staging_url: project?.staging_url || '',
     production_url: project?.production_url || '',
+    admin_url: project?.admin_url || '',
+    member_url: project?.member_url || '',
+    tutorial_url: project?.tutorial_url || '',
     domain_expiry_date: project?.domain_expiry_date || '',
   });
 
@@ -102,20 +102,20 @@ export function ProjectFormModal({ onSuccess, project }: ProjectFormModalProps) 
                 <Input id="target_deadline" type="date" name="target_deadline" value={formData.target_deadline || ''} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert opacity-80" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="figma_url" className="text-zinc-400 text-xs uppercase tracking-wider">Link Figma</Label>
-                <Input id="figma_url" name="figma_url" value={formData.figma_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://figma.com/..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="github_repo_url" className="text-zinc-400 text-xs uppercase tracking-wider">Link GitHub</Label>
-                <Input id="github_repo_url" name="github_repo_url" value={formData.github_repo_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://github.com/..." />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="staging_url" className="text-zinc-400 text-xs uppercase tracking-wider">Staging URL</Label>
-                <Input id="staging_url" name="staging_url" value={formData.staging_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://staging..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="production_url" className="text-zinc-400 text-xs uppercase tracking-wider">Production URL</Label>
+                <Label htmlFor="production_url" className="text-zinc-400 text-xs uppercase tracking-wider">Link Website Utama</Label>
                 <Input id="production_url" name="production_url" value={formData.production_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://..." />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin_url" className="text-zinc-400 text-xs uppercase tracking-wider">Link Admin</Label>
+                <Input id="admin_url" name="admin_url" value={formData.admin_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://.../wp-admin" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="member_url" className="text-zinc-400 text-xs uppercase tracking-wider">Link Member Area <span className="text-zinc-600 normal-case tracking-normal">(Opsional)</span></Label>
+                <Input id="member_url" name="member_url" value={formData.member_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://.../login" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tutorial_url" className="text-zinc-400 text-xs uppercase tracking-wider">Link Tutorial / Penjelasan</Label>
+                <Input id="tutorial_url" name="tutorial_url" value={formData.tutorial_url} onChange={handleChange} className="bg-zinc-900/50 border-zinc-700/50 focus-visible:ring-zinc-500 h-9" placeholder="https://docs.google.com/..." />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="domain_expiry_date" className="text-zinc-400 text-xs uppercase tracking-wider">Domain Expiry</Label>
