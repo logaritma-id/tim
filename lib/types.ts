@@ -37,7 +37,9 @@ export interface ActivityLog {
 export interface ProjectComment {
   id: string;
   project_id: string;
-  sender_name: string;
+  user_id?: string;
+  user_name: string;
+  user_avatar?: string | null;
   message: string;
   created_at: string;
 }
