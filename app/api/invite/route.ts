@@ -54,7 +54,8 @@ export async function POST(request: Request) {
     }
 
     // 3. Kirim Pesan Fonnte
-    const inviteLink = `https://tim-gilt.vercel.app/register?token=${inviteToken}`;
+    const origin = new URL(request.url).origin;
+    const inviteLink = `${origin}/register?token=${inviteToken}`;
     const message = `Halo! 👋\n\nAnda telah diundang untuk bergabung ke Tim di *Logaritma Project Hub*.\n\nSilakan klik tautan rahasia berikut untuk melengkapi pendaftaran akun Anda:\n${inviteLink}\n\n_Pesan ini dikirim secara otomatis._`;
 
     const response = await fetch('https://api.fonnte.com/send', {
