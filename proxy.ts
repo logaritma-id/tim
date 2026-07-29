@@ -31,6 +31,11 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // API routes should not be redirected to HTML pages. They handle their own auth.
+  if (pathname.startsWith('/api/')) {
+    return supabaseResponse;
+  }
+
   // If not logged in and not on login/register page, redirect to /login
   if (!user && pathname !== '/login' && pathname !== '/register') {
     const url = request.nextUrl.clone();
