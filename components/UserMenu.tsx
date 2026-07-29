@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
-import { LogOut, ChevronDown, User as UserIcon } from 'lucide-react';
+import { LogOut, ChevronDown, User as UserIcon, Users } from 'lucide-react';
+import { TeamManagerModal } from './TeamManagerModal';
 
 export function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
+  const [teamModalOpen, setTeamModalOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -88,6 +90,18 @@ export function UserMenu() {
 
             {/* Actions */}
             <div className="p-1.5">
+              {user.email === 'adm.gadingprinting@gmail.com' && (
+                <button
+                  onClick={() => {
+                    setOpen(false);
+                    setTeamModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-colors mb-1"
+                >
+                  <Users className="w-4 h-4 text-indigo-400" />
+                  Kelola Tim
+                </button>
+              )}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
@@ -99,6 +113,8 @@ export function UserMenu() {
           </div>
         </>
       )}
+
+      <TeamManagerModal open={teamModalOpen} onOpenChange={setTeamModalOpen} />
     </div>
   );
 }
