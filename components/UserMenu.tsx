@@ -4,21 +4,52 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
-import { LogOut, ChevronDown, User as UserIcon, Users } from 'lucide-react';
+import { LogOut, ChevronDown, User as UserIcon, Users, UserCheck } from 'lucide-react';
 import { TeamManagerModal } from './TeamManagerModal';
+import { TeamListModal } from './TeamListModal';
 
 export function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const [teamModalOpen, setTeamModalOpen] = useState(false);
+  const [teamListOpen, setTeamListOpen] = useState(false);
+  const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    let globalChannel: ReturnType<typeof supabase.channel> | null = null;
+
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      if (data.user) {
+        globalChannel = supabase.channel('global_presence', {
+          config: { presence: { key: data.user.id } }
+        });
+
+        globalChannel
+          .on('presence', { event: 'sync' }, () => {
+            const state = globalChannel!.presenceState();
+            const onlineIds = Object.keys(state);
+            setOnlineUserIds(onlineIds);
+          })
+          .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+              await globalChannel!.track({ online_at: new Date().toISOString() });
+            }
+          });
+      }
+    });
+
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
-    return () => listener.subscription.unsubscribe();
+
+    return () => {
+      listener.subscription.unsubscribe();
+      if (globalChannel) {
+        supabase.removeChannel(globalChannel);
+      }
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -90,6 +121,23 @@ export function UserMenu() {
 
             {/* Actions */}
             <div className="p-1.5">
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setTeamListOpen(true);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-colors mb-1"
+              >
+                <UserCheck className="w-4 h-4 text-emerald-400" />
+                <div className="flex flex-1 items-center justify-between">
+                  <span>Daftar Tim</span>
+                  <span className="flex items-center gap-1.5 text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    {onlineUserIds.length} Online
+                  </span>
+                </div>
+              </button>
+
               {user.email === 'adm.gadingprinting@gmail.com' && (
                 <button
                   onClick={() => {
@@ -115,6 +163,7 @@ export function UserMenu() {
       )}
 
       <TeamManagerModal open={teamModalOpen} onOpenChange={setTeamModalOpen} />
+      <TeamListModal open={teamListOpen} onOpenChange={setTeamListOpen} onlineUserIds={onlineUserIds} />
     </div>
   );
 }
