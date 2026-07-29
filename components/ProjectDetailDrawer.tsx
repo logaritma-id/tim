@@ -76,10 +76,16 @@ export function ProjectDetailDrawer({ project, children }: Props) {
         { event: 'INSERT', schema: 'public', table: 'project_comments', filter: `project_id=eq.${project.id}` },
         (payload) => {
           setComments(prev => {
-            // Avoid duplicates
             if (prev.some(c => c.id === (payload.new as ProjectComment).id)) return prev;
             return [...prev, payload.new as ProjectComment];
           });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'project_comments' },
+        (payload) => {
+          setComments(prev => prev.filter(c => c.id !== payload.old.id));
         }
       )
       .subscribe();
@@ -200,6 +206,16 @@ export function ProjectDetailDrawer({ project, children }: Props) {
     }
   };
 
+  const deleteComment = async (id: string) => {
+    // Optimistic Delete
+    setComments(prev => prev.filter(c => c.id !== id));
+    const { error } = await supabase.from('project_comments').delete().eq('id', id);
+    if (error) {
+      toast.error('Gagal menghapus pesan');
+      fetchData(); // Rollback jika gagal
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={<div className="cursor-pointer">{children}</div>} />
@@ -268,7 +284,7 @@ export function ProjectDetailDrawer({ project, children }: Props) {
               <Loader2 className="animate-spin text-zinc-500 w-6 h-6" />
             </div>
           ) : (
-            <div className="flex-1 overflow-hidden relative">
+            <div className="flex-1 overflow-hidden relative flex flex-col">
               {/* TASKS */}
               <TabsContent value="tasks" className="h-full p-0 m-0">
                 <ScrollArea className="h-full px-6 py-4">
@@ -358,7 +374,7 @@ export function ProjectDetailDrawer({ project, children }: Props) {
                       const isMe = comment.user_id === user?.id || comment.user_name === userName;
                       const initials = (comment.user_name ?? '?').split(' ').map((n:string) => n[0]).slice(0,2).join('').toUpperCase();
                       return (
-                        <div key={comment.id} className={`flex gap-2.5 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                        <div key={comment.id} className={`flex gap-2.5 ${isMe ? 'flex-row-reverse' : 'flex-row'} group/chat relative`}>
                           {/* Avatar */}
                           <div className="w-7 h-7 rounded-full bg-zinc-700 border border-zinc-600 flex items-center justify-center text-[10px] font-bold text-zinc-300 shrink-0 mt-auto">
                             {comment.user_avatar ? (
@@ -372,8 +388,15 @@ export function ProjectDetailDrawer({ project, children }: Props) {
                                 {new Date(comment.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
-                            <div className={`px-4 py-2.5 rounded-2xl text-sm ${isMe ? 'bg-indigo-600/20 text-indigo-100 border border-indigo-500/30 rounded-tr-none' : 'bg-zinc-800/60 text-zinc-200 border border-zinc-700/50 rounded-tl-none'}`}>
-                              {comment.message}
+                            <div className={`flex items-center gap-2 relative ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                              <div className={`px-4 py-2.5 rounded-2xl text-sm ${isMe ? 'bg-indigo-600/20 text-indigo-100 border border-indigo-500/30 rounded-tr-none' : 'bg-zinc-800/60 text-zinc-200 border border-zinc-700/50 rounded-tl-none'}`}>
+                                {comment.message}
+                              </div>
+                              {isMe && (
+                                <button onClick={() => deleteComment(comment.id)} className="opacity-0 group-hover/chat:opacity-100 text-zinc-500 hover:text-red-400 p-1 transition-opacity shrink-0">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
