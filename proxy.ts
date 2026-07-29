@@ -31,15 +31,15 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // If not logged in and not on login page, redirect to /login
-  if (!user && pathname !== '/login') {
+  // If not logged in and not on login/register page, redirect to /login
+  if (!user && pathname !== '/login' && pathname !== '/register') {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // If logged in and on login page, redirect to dashboard
-  if (user && pathname === '/login') {
+  // If logged in and on login/register page, redirect to dashboard
+  if (user && (pathname === '/login' || pathname === '/register')) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
