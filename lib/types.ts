@@ -33,3 +33,11 @@ export interface ActivityLog {
   notes: string;
   created_at: string;
 }
+
+export interface ProjectComment {
+  id: string;
+  project_id: string;
+  sender_name: string;
+  message: string;
+  created_at: string;
+}

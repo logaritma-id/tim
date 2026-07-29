@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Project, ProjectTask, ActivityLog } from '@/lib/types';
+import { Project, ProjectTask, ActivityLog, ProjectComment } from '@/lib/types';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Plus, ListTodo, Activity, Clock } from 'lucide-react';
+import { Loader2, Plus, ListTodo, Activity, Clock, Maximize2, Minimize2, Trash2, Send, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -20,27 +20,60 @@ interface Props {
 
 export function ProjectDetailDrawer({ project, children }: Props) {
   const [open, setOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [comments, setComments] = useState<ProjectComment[]>([]);
   const [loading, setLoading] = useState(false);
   
   const [newTaskName, setNewTaskName] = useState('');
   const [newLogNotes, setNewLogNotes] = useState('');
+  const [newComment, setNewComment] = useState('');
+  
+  // Minimalist simulation of logged-in user. In real app, this comes from Auth.
+  const [senderName, setSenderName] = useState('Anggota Tim'); 
+  const commentsEndRef = useRef<HTMLDivElement>(null);
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: tData } = await supabase.from('project_tasks').select('*').eq('project_id', project.id);
+    const { data: tData } = await supabase.from('project_tasks').select('*').eq('project_id', project.id).order('id', { ascending: true });
     if (tData) setTasks(tData);
     
     const { data: lData } = await supabase.from('activity_logs').select('*').eq('project_id', project.id).order('created_at', { ascending: false });
     if (lData) setLogs(lData);
     
+    const { data: cData } = await supabase.from('project_comments').select('*').eq('project_id', project.id).order('created_at', { ascending: true });
+    if (cData) setComments(cData);
+    
     setLoading(false);
   };
 
   useEffect(() => {
-    if (open) fetchData();
-  }, [open]);
+    if (open) {
+      fetchData();
+
+      const channel = supabase
+        .channel(`comments_${project.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'project_comments', filter: `project_id=eq.${project.id}` },
+          (payload) => {
+            setComments(prev => [...prev, payload.new as ProjectComment]);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [open, project.id]);
+
+  useEffect(() => {
+    if (commentsEndRef.current) {
+      commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [comments]);
 
   const addTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,20 +90,25 @@ export function ProjectDetailDrawer({ project, children }: Props) {
     } else if (data) {
       setTasks([...tasks, data[0]]);
       setNewTaskName('');
-      toast.success('Task ditambahkan');
     }
   };
 
   const toggleTask = async (task: ProjectTask) => {
     const newStatus = task.status === 'done' ? 'todo' : 'done';
-    
-    // Optimistic update
     setTasks(tasks.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
-    
     const { error } = await supabase.from('project_tasks').update({ status: newStatus }).eq('id', task.id);
     if (error) {
       toast.error('Gagal mengupdate task');
-      fetchData(); // Revert
+      fetchData(); 
+    }
+  };
+
+  const deleteTask = async (taskId: string) => {
+    const { error } = await supabase.from('project_tasks').delete().eq('id', taskId);
+    if (error) {
+      toast.error('Gagal menghapus task');
+    } else {
+      setTasks(tasks.filter(t => t.id !== taskId));
     }
   };
 
@@ -81,7 +119,7 @@ export function ProjectDetailDrawer({ project, children }: Props) {
     const { data, error } = await supabase.from('activity_logs').insert([{
       project_id: project.id,
       notes: newLogNotes,
-      updated_by: 'Tim Dev' // In a real app, use auth user
+      updated_by: senderName
     }]).select();
     
     if (error) {
@@ -89,37 +127,75 @@ export function ProjectDetailDrawer({ project, children }: Props) {
     } else if (data) {
       setLogs([data[0], ...logs]);
       setNewLogNotes('');
-      toast.success('Log aktivitas ditambahkan');
     }
+  };
+
+  const deleteLog = async (logId: string) => {
+    const { error } = await supabase.from('activity_logs').delete().eq('id', logId);
+    if (error) {
+      toast.error('Gagal menghapus log');
+    } else {
+      setLogs(logs.filter(l => l.id !== logId));
+    }
+  };
+
+  const addComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    
+    const { error } = await supabase.from('project_comments').insert([{
+      project_id: project.id,
+      sender_name: senderName,
+      message: newComment
+    }]);
+    
+    if (error) toast.error('Gagal mengirim pesan');
+    else setNewComment('');
   };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={<div className="cursor-pointer">{children}</div>} />
-      <SheetContent className="w-full sm:max-w-md bg-[#09090b] border-zinc-800 text-zinc-100 p-0 flex flex-col h-full">
-        <SheetHeader className="p-6 pb-4 border-b border-zinc-800/60">
+      
+      <SheetContent className={`bg-[#09090b] border-zinc-800 text-zinc-100 p-0 flex flex-col transition-all duration-300 ease-in-out ${isFullscreen ? 'w-full sm:max-w-none' : 'w-full sm:max-w-md'}`}>
+        
+        {/* Fullscreen Toggle Button - positioned near the Close button */}
+        <div className="absolute right-12 top-3 z-50">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-zinc-400 hover:text-zinc-50 hover:bg-zinc-800"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            title={isFullscreen ? "Keluar Fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        <SheetHeader className="p-6 pb-4 border-b border-zinc-800/60 pr-24">
           <SheetTitle className="text-xl text-zinc-50">{project.project_title}</SheetTitle>
           <SheetDescription className="text-zinc-400">
-            Detail progress dan aktivitas untuk klien {project.client_name}.
+            Detail progress, log aktivitas, dan ruang kolaborasi untuk klien {project.client_name}.
           </SheetDescription>
         </SheetHeader>
         
-        <Tabs defaultValue="tasks" className="flex-1 flex flex-col">
-          <div className="px-6 pt-2">
-            <TabsList className="grid w-full grid-cols-2 bg-zinc-900/80">
-              <TabsTrigger value="tasks" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-50"><ListTodo className="w-4 h-4 mr-2" /> Tasks</TabsTrigger>
-              <TabsTrigger value="logs" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-50"><Activity className="w-4 h-4 mr-2" /> Activity Log</TabsTrigger>
+        <Tabs defaultValue="tasks" className="flex-1 flex flex-col overflow-hidden">
+          <div className="px-6 pt-3">
+            <TabsList className="grid w-full grid-cols-3 bg-zinc-900/80">
+              <TabsTrigger value="tasks" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-50 text-xs"><ListTodo className="w-3.5 h-3.5 mr-1.5" /> Tasks</TabsTrigger>
+              <TabsTrigger value="logs" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-50 text-xs"><Activity className="w-3.5 h-3.5 mr-1.5" /> Log</TabsTrigger>
+              <TabsTrigger value="chat" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-50 text-xs"><MessageSquare className="w-3.5 h-3.5 mr-1.5" /> Diskusi</TabsTrigger>
             </TabsList>
           </div>
 
-          <ScrollArea className="flex-1 mt-4">
-            {loading ? (
-              <div className="flex justify-center p-8"><Loader2 className="animate-spin text-zinc-500 w-6 h-6" /></div>
-            ) : (
-              <>
-                {/* TASKS CONTENT */}
-                <TabsContent value="tasks" className="p-6 pt-0 m-0 space-y-4">
-                  <form onSubmit={addTask} className="flex gap-2">
+          {loading ? (
+            <div className="flex-1 flex justify-center items-center"><Loader2 className="animate-spin text-zinc-500 w-6 h-6" /></div>
+          ) : (
+            <div className="flex-1 overflow-hidden relative">
+              {/* TASKS CONTENT */}
+              <TabsContent value="tasks" className="h-full p-0 m-0">
+                <ScrollArea className="h-full px-6 py-4">
+                  <form onSubmit={addTask} className="flex gap-2 mb-6">
                     <Input 
                       value={newTaskName} 
                       onChange={(e) => setNewTaskName(e.target.value)} 
@@ -128,38 +204,53 @@ export function ProjectDetailDrawer({ project, children }: Props) {
                     />
                     <Button type="submit" size="icon" className="bg-zinc-100 hover:bg-white text-zinc-900 shrink-0"><Plus className="h-4 w-4" /></Button>
                   </form>
-                  <div className="space-y-3 mt-6">
+                  <div className="space-y-3 pb-8">
                     {tasks.length === 0 ? (
                       <p className="text-center text-zinc-500 text-sm py-4">Belum ada task.</p>
                     ) : tasks.map(task => (
-                      <div key={task.id} className="flex items-start space-x-3 p-3 rounded-lg border border-zinc-800/50 bg-zinc-900/30 hover:bg-zinc-900/60 transition-colors">
-                        <Checkbox 
-                          checked={task.status === 'done'} 
-                          onCheckedChange={() => toggleTask(task)} 
-                          className="mt-0.5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-                        />
-                        <div className="space-y-1 leading-none">
-                          <label className={`text-sm font-medium leading-none ${task.status === 'done' ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
-                            {task.task_name}
-                          </label>
+                      <div key={task.id} className="flex items-start justify-between p-3 rounded-lg border border-zinc-800/50 bg-zinc-900/30 hover:bg-zinc-900/60 transition-colors group">
+                        <div className="flex items-start space-x-3">
+                          <Checkbox 
+                            checked={task.status === 'done'} 
+                            onCheckedChange={() => toggleTask(task)} 
+                            className="mt-0.5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                          />
+                          <div className="space-y-1 leading-none">
+                            <label className={`text-sm font-medium leading-none ${task.status === 'done' ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
+                              {task.task_name}
+                            </label>
+                          </div>
                         </div>
+                        <button onClick={() => deleteTask(task.id)} className="text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))}
                   </div>
-                </TabsContent>
+                </ScrollArea>
+              </TabsContent>
 
-                {/* LOGS CONTENT */}
-                <TabsContent value="logs" className="p-6 pt-0 m-0 space-y-6">
-                  <form onSubmit={addLog} className="space-y-3">
+              {/* LOGS CONTENT */}
+              <TabsContent value="logs" className="h-full p-0 m-0">
+                <ScrollArea className="h-full px-6 py-4">
+                  <form onSubmit={addLog} className="space-y-3 mb-6">
                     <Textarea 
                       value={newLogNotes} 
                       onChange={(e) => setNewLogNotes(e.target.value)} 
                       placeholder="Tulis update progres hari ini..." 
                       className="bg-zinc-900 border-zinc-800 focus-visible:ring-zinc-700 min-h-[80px] text-sm resize-none"
                     />
-                    <Button type="submit" size="sm" className="w-full bg-zinc-100 hover:bg-white text-zinc-900">Posting Update</Button>
+                    <div className="flex gap-2">
+                       <Input 
+                        value={senderName} 
+                        onChange={(e) => setSenderName(e.target.value)} 
+                        placeholder="Nama Pembuat" 
+                        className="bg-zinc-900 border-zinc-800 text-xs w-1/3 h-8"
+                      />
+                      <Button type="submit" size="sm" className="flex-1 bg-zinc-100 hover:bg-white text-zinc-900 h-8">Posting Update</Button>
+                    </div>
                   </form>
-                  <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-zinc-800 before:to-transparent">
+                  <div className="space-y-4 pb-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-zinc-800 before:to-transparent">
                     {logs.length === 0 ? (
                       <p className="text-center text-zinc-500 text-sm py-4">Belum ada log aktivitas.</p>
                     ) : logs.map(log => (
@@ -167,11 +258,14 @@ export function ProjectDetailDrawer({ project, children }: Props) {
                         <div className="flex items-center justify-center w-10 h-10 rounded-full border border-zinc-800 bg-zinc-950 text-zinc-500 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow">
                           <Clock className="w-4 h-4" />
                         </div>
-                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-zinc-800/60 bg-zinc-900/40 shadow-sm">
-                          <div className="flex items-center justify-between mb-1">
+                        <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-zinc-800/60 bg-zinc-900/40 shadow-sm relative group/log">
+                          <button onClick={() => deleteLog(log.id)} className="absolute top-3 right-3 text-zinc-600 hover:text-red-400 opacity-0 group-hover/log:opacity-100 transition-opacity">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="flex items-center justify-between mb-1 pr-6">
                             <h4 className="font-semibold text-zinc-200 text-sm">{log.updated_by}</h4>
                             <time className="text-[10px] text-zinc-500 font-medium px-2 py-0.5 bg-zinc-800/50 rounded-full">
-                              {new Date(log.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                              {new Date(log.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' })}
                             </time>
                           </div>
                           <p className="text-zinc-400 text-sm">{log.notes}</p>
@@ -179,10 +273,57 @@ export function ProjectDetailDrawer({ project, children }: Props) {
                       </div>
                     ))}
                   </div>
-                </TabsContent>
-              </>
-            )}
-          </ScrollArea>
+                </ScrollArea>
+              </TabsContent>
+
+              {/* CHAT/DISCUSSION CONTENT */}
+              <TabsContent value="chat" className="h-full p-0 m-0 flex flex-col">
+                <ScrollArea className="flex-1 px-6 py-4">
+                  <div className="space-y-4 pb-4">
+                    {comments.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-32 text-zinc-500">
+                        <MessageSquare className="w-8 h-8 mb-2 opacity-50" />
+                        <p className="text-sm">Belum ada diskusi untuk project ini.</p>
+                      </div>
+                    ) : comments.map(comment => {
+                      const isMe = comment.sender_name === senderName;
+                      return (
+                        <div key={comment.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <span className="text-xs font-medium text-zinc-400">{comment.sender_name}</span>
+                            <span className="text-[10px] text-zinc-600">{new Date(comment.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                          <div className={`px-4 py-2.5 rounded-2xl max-w-[85%] text-sm ${isMe ? 'bg-indigo-600/20 text-indigo-100 border border-indigo-500/30 rounded-tr-none' : 'bg-zinc-800/50 text-zinc-200 border border-zinc-700/50 rounded-tl-none'}`}>
+                            {comment.message}
+                          </div>
+                        </div>
+                      )
+                    })}
+                    <div ref={commentsEndRef} />
+                  </div>
+                </ScrollArea>
+                <div className="p-4 border-t border-zinc-800/60 bg-zinc-950/50">
+                  <form onSubmit={addComment} className="flex gap-2">
+                    <Input 
+                      value={senderName} 
+                      onChange={(e) => setSenderName(e.target.value)} 
+                      placeholder="Nama Anda" 
+                      className="bg-zinc-900 border-zinc-800 text-xs w-1/4 h-10 px-3"
+                    />
+                    <Input 
+                      value={newComment} 
+                      onChange={(e) => setNewComment(e.target.value)} 
+                      placeholder="Tulis pesan..." 
+                      className="bg-zinc-900 border-zinc-800 text-sm flex-1 h-10 px-4"
+                    />
+                    <Button type="submit" size="icon" className="bg-indigo-600 hover:bg-indigo-500 text-white shrink-0 h-10 w-10">
+                      <Send className="h-4 w-4 ml-0.5" />
+                    </Button>
+                  </form>
+                </div>
+              </TabsContent>
+            </div>
+          )}
         </Tabs>
       </SheetContent>
     </Sheet>

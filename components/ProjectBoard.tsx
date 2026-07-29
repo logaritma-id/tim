@@ -9,10 +9,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { GitBranch, Palette, Link as LinkIcon, Calendar, Loader2, ExternalLink, Copy, AlertTriangle, Search } from 'lucide-react';
+import { GitBranch, Palette, Link as LinkIcon, Calendar, Loader2, ExternalLink, Copy, AlertTriangle, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProjectFormModal } from './ProjectFormModal';
 import { ProjectDetailDrawer } from './ProjectDetailDrawer';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const STATUS_OPTIONS: { label: string; value: ProjectStatus; color: string; progress: number }[] = [
   { label: 'Briefing', value: 'briefing', color: 'bg-zinc-700 text-zinc-100 hover:bg-zinc-600', progress: 15 },
@@ -80,7 +91,6 @@ export function ProjectBoard() {
       return;
     }
 
-    // Trigger Notification
     try {
       const res = await fetch('/api/notify', {
         method: 'POST',
@@ -103,8 +113,20 @@ export function ProjectBoard() {
     }
   };
 
+  const handleDeleteProject = async (projectId: string, projectTitle: string) => {
+    const { error } = await supabase.from('projects').delete().eq('id', projectId);
+    if (error) {
+      toast.error('Gagal menghapus project');
+      console.error(error);
+    } else {
+      toast.success(`Project ${projectTitle} berhasil dihapus`);
+      // Note: real-time subscription will trigger a re-fetch, but optimistic update is good:
+      setProjects(prev => prev.filter(p => p.id !== projectId));
+    }
+  };
+
   const copyToClipboard = (e: React.MouseEvent, text: string, type: string) => {
-    e.stopPropagation(); // Mencegah drawer terbuka
+    e.stopPropagation();
     navigator.clipboard.writeText(text);
     toast.success(`Link ${type} disalin!`);
   };
@@ -165,13 +187,37 @@ export function ProjectBoard() {
         {filteredProjects.map((project) => (
           <ProjectDetailDrawer key={project.id} project={project}>
             <Card className="bg-zinc-900/40 border-zinc-800/80 hover:bg-zinc-900/80 hover:border-zinc-700/80 transition-all shadow-sm flex flex-col h-full rounded-xl group relative text-left">
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-4 relative">
                 <div className="flex justify-between items-start mb-3">
                   <Badge variant="outline" className={`${STATUS_OPTIONS.find(s => s.value === project.status)?.color} border font-medium text-xs rounded-md px-2 py-0.5 shadow-none`}>
                     {STATUS_OPTIONS.find(s => s.value === project.status)?.label}
                   </Badge>
-                  <div onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     <ProjectFormModal project={project} onSuccess={fetchProjects} />
+                    <AlertDialog>
+                      <AlertDialogTrigger render={
+                        <button className="text-zinc-500 hover:text-red-400 p-1 rounded transition-colors" title="Hapus Project">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      } />
+                      <AlertDialogContent className="bg-zinc-950 border-zinc-800 text-zinc-100">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Hapus Project Secara Permanen?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-zinc-400">
+                            Tindakan ini tidak dapat dibatalkan. Project <strong>{project.project_title}</strong> beserta seluruh daftar Task, Log Aktivitas, dan Diskusi Tim di dalamnya akan terhapus.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-100">Batal</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="bg-red-900/80 hover:bg-red-900 text-zinc-100 border border-red-800"
+                            onClick={() => handleDeleteProject(project.id, project.project_title)}
+                          >
+                            Ya, Hapus
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
                 
