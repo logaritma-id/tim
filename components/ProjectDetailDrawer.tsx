@@ -159,10 +159,10 @@ export function ProjectDetailDrawer({ project, children }: Props) {
       
       <SheetContent
         style={{
-          width: isFullscreen ? '100vw' : undefined,
-          maxWidth: isFullscreen ? '100vw' : undefined,
+          width: isFullscreen ? '100vw' : '28rem',
+          maxWidth: isFullscreen ? '100vw' : '28rem',
         }}
-        className="bg-[#09090b] border-zinc-800 text-zinc-100 p-0 flex flex-col transition-all duration-300 ease-in-out"
+        className="bg-[#09090b] border-zinc-800 text-zinc-100 p-0 flex flex-col transition-[width,max-width] duration-300 ease-in-out"
       >
         
         {/* Fullscreen Toggle Button - positioned near the Close button */}
